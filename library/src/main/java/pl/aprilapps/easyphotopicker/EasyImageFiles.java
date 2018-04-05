@@ -111,7 +111,8 @@ class EasyImageFiles implements Constants {
     static File pickedExistingPicture(@NonNull Context context, Uri photoUri) throws IOException {
         InputStream pictureInputStream = context.getContentResolver().openInputStream(photoUri);
         File directory = tempImageDirectory(context);
-        File photoFile = new File(directory, UUID.randomUUID().toString() + "." + getMimeType(context, photoUri));
+        String fileName=new File(photoUri.toString()).getName();
+        File photoFile = new File(directory,  fileName);
         photoFile.createNewFile();
         writeToFile(pictureInputStream, photoFile);
         return photoFile;
