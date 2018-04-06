@@ -2,9 +2,11 @@ package pl.aprilapps.easyphotopicker;
 
 import android.content.ContentResolver;
 import android.content.Context;
+import android.database.Cursor;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Environment;
+import android.provider.OpenableColumns;
 import android.support.annotation.NonNull;
 import android.support.v4.content.FileProvider;
 import android.text.TextUtils;
@@ -112,18 +114,33 @@ class EasyImageFiles implements Constants {
     static File pickedExistingPicture(@NonNull Context context, Uri photoUri) throws IOException {
         InputStream pictureInputStream = context.getContentResolver().openInputStream(photoUri);
         File directory = tempImageDirectory(context);
-        String type = getMimeType(context, photoUri);
-        String fileName = new File(photoUri.toString()).getName();
-
-        if(!TextUtils.isEmpty(type)){
-            fileName = fileName + "." + getMimeType(context, photoUri);
-        }
+        String fileName = getFileName(photoUri,context);
         File photoFile = new File(directory,  fileName);
         photoFile.createNewFile();
         writeToFile(pictureInputStream, photoFile);
         return photoFile;
     }
-
+    public static String getFileName(Uri uri,Context context) {
+        String result = null;
+        if (uri.getScheme().equals("content")) {
+            Cursor cursor = context.getContentResolver().query(uri, null, null, null, null);
+            try {
+                if (cursor != null && cursor.moveToFirst()) {
+                    result = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME));
+                }
+            } finally {
+                cursor.close();
+            }
+        }
+        if (result == null) {
+            result = uri.getPath();
+            int cut = result.lastIndexOf('/');
+            if (cut != -1) {
+                result = result.substring(cut + 1);
+            }
+        }
+        return result;
+    }
     static File getCameraPicturesLocation(@NonNull Context context) throws IOException {
         File dir = tempImageDirectory(context);
         return File.createTempFile(UUID.randomUUID().toString(), ".jpg", dir);
